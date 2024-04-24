@@ -5,10 +5,11 @@ const Joi = require('joi');
 const {
   listContacts,
   getContactById,
-  removeContact,
   addContact,
-  updateContact
-} = require('../../models/contacts');
+  removeContact,
+  updateContact,
+  updateStatusContact,
+} = require('../../services/index');
 const { status } = require('express/lib/response');
 
 const contactSchema = Joi.object({
@@ -78,6 +79,31 @@ router.put('/:contactId', async (req, res, next) => {
     return res.status(404).json({message: "Not found"});
   } catch (error) {
     res.status(400).json({message: error.message});
+  }
+});
+
+const userSchemaFavorite = Joi.object({
+  favorite: Joi.boolean(),
+});
+
+router.patch("/:contactId/favorite", async (req, res, next) => {
+  try {
+    const body = req.body;
+    const { error } = userSchemaFavorite.validate(body);
+
+    if (error) {
+      // const validatingErrorMessage = error.details[0].message;
+      return res
+        .status(400)
+        .json({ message: "missing field favorite" });
+    }
+
+    const contactId = req.params.contactId;
+    const updatedStatusContact = await updateStatusContact(contactId, body);
+    res.status(200).json(updatedStatusContact);
+  } catch (error) {
+    res.status(404).json({message: "Not found"});
+    next();
   }
 });
 
