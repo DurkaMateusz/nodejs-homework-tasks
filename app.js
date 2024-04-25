@@ -1,6 +1,11 @@
 const express = require('express')
 const logger = require('morgan')
 const cors = require('cors')
+const mongoose = require('mongoose')
+
+require('dotenv').config();
+
+const { DB_HOST: urlDb } = process.env;
 
 const contactsRouter = require('./routes/api/contacts')
 
@@ -21,5 +26,12 @@ app.use((req, res) => {
 app.use((err, req, res, next) => {
   res.status(500).json({ message: err.message })
 })
+
+mongoose.connect( urlDb)
+  .then(() => console.log('Database connection successful'))
+  .catch(err => {
+    console.error('Database connection error', err);
+    process.exit(1);
+  })
 
 module.exports = app
