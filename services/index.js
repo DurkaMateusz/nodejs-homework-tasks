@@ -36,7 +36,7 @@ const updateAvatarUrl = async (userId, avatarUrl) => {
 };
 
 const deleteTempAvatarFile = (filename) => {
-    const filePath = path.join(process.cwd(), "temp", filename);
+    const filePath = path.join(process.cwd(), "tmp", filename);
     try {
         fs.unlinkSync(filePath);
     } catch(error) {
