@@ -160,7 +160,7 @@ router.patch("/avatars", [authToken, userLoggedIn, upload.single("avatar")], asy
     .replace(" ", "-");
 
     await jimp
-      .read(fs.readFile(file.path))
+      .read(file.path)
       .then((img) => {
         return img
         .resize(250, 250)
