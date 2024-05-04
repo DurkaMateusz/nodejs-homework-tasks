@@ -1,3 +1,5 @@
+const path = require('path');
+const fs = require('fs');
 const Contact = require('./schema/contacts');
 const Users = require('./schema/users');
 
@@ -29,6 +31,19 @@ const addUser = async (user) => {
     return Users.create(user);
 };
 
+const updateAvatarUrl = async (userId, avatarUrl) => {
+    return Users.findByIdAndUpdate({ _id: userId }, { avatarUrl }, { new: true});
+};
+
+const deleteTempAvatarFile = (filename) => {
+    const filePath = path.join(process.cwd(), "tmp", filename);
+    try {
+        fs.unlinkSync(filePath);
+    } catch(error) {
+        console.error(error);
+    }
+};
+
 module.exports = {
     listContacts,
     getContactById,
@@ -37,4 +52,6 @@ module.exports = {
     updateContact,
     updateStatusContact,
     addUser,
+    updateAvatarUrl,
+    deleteTempAvatarFile,
 };
