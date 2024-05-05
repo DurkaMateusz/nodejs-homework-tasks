@@ -8,13 +8,12 @@ const { addUser, updateAvatarUrl, deleteTempAvatarFile } = require('../../servic
 require("dotenv").config();
 const authToken = require('../../services/middlewares/auth');
 const userLoggedIn = require('../../services/middlewares/userLoggedIn');
-
+const nanoid = require('nanoid-esm');
 const gravatar = require("gravatar");
 const multer = require("multer");
 const jimp = require("jimp");
 const path = require("path");
-const fs = require("fs");
-
+const mailer = require("../api/mailer")
 const router = express.Router();
 
 const joiPassword = joi.extend(joiPasswordExtendCore);
@@ -74,12 +73,16 @@ router.post("/signup", async (req, res, next) => {
         rating: "g",
         default: "retro"
       });
+
+      const verificationToken = nanoid();
   
       const addedUser = await addUser({
         email: body.email,
         password: hashedPassword,
         avatarUrl,
+        verificationToken,
       });
+      mailer.sendVerificationEmail(body.email, verificationToken);
       res.json(addedUser);
       console.log("User signup successfully");
     } catch (error) {
@@ -178,6 +181,55 @@ router.patch("/avatars", [authToken, userLoggedIn, upload.single("avatar")], asy
       console.error(error);
       next();
     }
+});
+
+router.get("/verify/:verificationToken", async (req, res, next) => {
+  try {
+    const { verificationToken } = req.params;
+    const user = await Users.findOneAndUpdate(
+      { verificationToken },
+      { verify: true, verificationToken: null },
+      { new: true }
+    );
+    console.log(user);
+
+    if (user) {
+      return res.status(200).json({ message: "Verification successful" });
+    } else {
+      return res.status(404).json({ message: "User not found" });
+      next();
+    }
+  } catch (error) {
+    console.error("Something went wrong: ", error);
+    next(error);
+  }
+});
+
+router.post("/verify", async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    const user = await Users.findOne({ email });
+
+    if (!email) {
+      return res
+        .status(400)
+        .json({ message: `Missing required field email` });
+    }
+
+    if (user.verify) {
+      return res
+        .status(400)
+        .json({ message: `Verification has already been passed` });
+    }
+
+    mailer.sendVerificationEmail(user.email, user.verificationToken);
+    return res
+      .status(200)
+      .json({ message: `Verification email sent` });
+  } catch (error) {
+    console.error("Something went wrong: ", error);
+    next();
+  }
 });
 
 module.exports = router;
